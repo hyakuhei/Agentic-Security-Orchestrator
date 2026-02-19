@@ -12,7 +12,6 @@
             "execution": {
                 "steps": [
                     "Open OCI Cloud Guard problems view filtered to last 24h high/critical severity.",
-                    "Assign each problem an owner, ticket, and ETA; validate containment plans.",
                     "Verify security zones applied to intended compartments and review any violations/exceptions.",
                     "Confirm detector and responder recipes align with enterprise baseline configuration."
                 ],
@@ -24,7 +23,6 @@
             },
             "success_criteria": {
                 "pass": "0 unassigned high/critical problems and no unauthorized security-zone drift.",
-                "warning": "Any high/critical problem open >8h without owner or <=2 violations pending approved exceptions.",
                 "fail": "Critical problems open >24h without containment or resources operating with unapproved security-zone violations."
             },
             "compliance": [
@@ -149,7 +147,7 @@
                 "steps": [
                     "Pull IDCS authentication logs and OCI Audit events for last 24 hours.",
                     "Identify impossible travel, TOR/VPN origins, excessive failures, MFA denials, and first-time token use.",
-                    "Create incident tickets for high-risk events and apply IP blocks or conditional access per playbook."
+                    "Update comments with any high-risk events and apply IP blocks or conditional access per playbook."
                 ],
                 "tooling": [
                     "IDCS Logs",
