@@ -1,0 +1,518 @@
+{
+    "version": 1,
+    "generated_at": "2026-02-19T09:17:00Z",
+    "owner": "Security Operations",
+    "description": "Daily machine-readable operations plan for monitoring and sustaining Oracle Cloud (OCI/IDCS) security posture, compliance alignment, and MITRE ATT&CK coverage.",
+    "tasks": [
+        {
+            "id": "CG-01",
+            "name": "Cloud Guard and Security Zones Triage",
+            "cadence": "daily",
+            "objective": "Identify and remediate new high/critical Cloud Guard problems and security zone violations.",
+            "execution": {
+                "steps": [
+                    "Open OCI Cloud Guard problems view filtered to last 24h high/critical severity.",
+                    "Assign each problem an owner, ticket, and ETA; validate containment plans.",
+                    "Verify security zones applied to intended compartments and review any violations/exceptions.",
+                    "Confirm detector and responder recipes align with enterprise baseline configuration."
+                ],
+                "tooling": [
+                    "OCI Console",
+                    "Cloud Guard API",
+                    "Security Zones"
+                ]
+            },
+            "success_criteria": {
+                "pass": "0 unassigned high/critical problems and no unauthorized security-zone drift.",
+                "warning": "Any high/critical problem open >8h without owner or <=2 violations pending approved exceptions.",
+                "fail": "Critical problems open >24h without containment or resources operating with unapproved security-zone violations."
+            },
+            "compliance": [
+                {
+                    "framework": "CIS OCI",
+                    "controls": [
+                        "Security Monitoring"
+                    ]
+                },
+                {
+                    "framework": "ISO 27001",
+                    "controls": [
+                        "A.12",
+                        "A.18"
+                    ]
+                },
+                {
+                    "framework": "SOC 2",
+                    "controls": [
+                        "CC7"
+                    ]
+                },
+                {
+                    "framework": "NIST 800-53",
+                    "controls": [
+                        "CA-7",
+                        "RA-5"
+                    ]
+                }
+            ],
+            "mitre_attck": {
+                "mitigates": [
+                    {
+                        "tactic": "Defense Evasion",
+                        "technique_id": "T1562"
+                    },
+                    {
+                        "tactic": "Initial Access",
+                        "technique_id": "T1190"
+                    },
+                    {
+                        "tactic": "Impact",
+                        "technique_id": "T1490"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "IAM-02",
+            "name": "IAM Policy and Entity Delta Review",
+            "cadence": "daily",
+            "objective": "Detect unauthorized IAM policy changes and prevent privilege creep in OCI IAM and IDCS.",
+            "execution": {
+                "steps": [
+                    "Export current OCI IAM policies and compare against prior snapshot for changes.",
+                    "List users, groups, dynamic groups, federations created or modified within 24h; validate with change tickets.",
+                    "Flag overbroad policies (e.g., manage all-resources) and propose least-privilege adjustments.",
+                    "Archive signed diffs and approvals in controlled repository."
+                ],
+                "tooling": [
+                    "OCI CLI",
+                    "IDCS APIs",
+                    "Git/Snapshot Repo"
+                ]
+            },
+            "success_criteria": {
+                "pass": "All IAM deltas mapped to approved requests, diffs stored with sign-off, no new broad policies.",
+                "warning": "Unexplained changes detected but under investigation for <8h.",
+                "fail": "Broad/high-privilege policies or groups created without approval or orphaned admin users detected."
+            },
+            "compliance": [
+                {
+                    "framework": "CIS OCI",
+                    "controls": [
+                        "Identity and Access Management"
+                    ]
+                },
+                {
+                    "framework": "ISO 27001",
+                    "controls": [
+                        "A.9"
+                    ]
+                },
+                {
+                    "framework": "SOC 2",
+                    "controls": [
+                        "CC6",
+                        "CC7"
+                    ]
+                },
+                {
+                    "framework": "NIST 800-53",
+                    "controls": [
+                        "AC-2",
+                        "AC-6"
+                    ]
+                }
+            ],
+            "mitre_attck": {
+                "mitigates": [
+                    {
+                        "tactic": "Privilege Escalation",
+                        "technique_id": "T1068"
+                    },
+                    {
+                        "tactic": "Persistence",
+                        "technique_id": "T1136"
+                    },
+                    {
+                        "tactic": "Defense Evasion",
+                        "technique_id": "T1098"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "AUTH-03",
+            "name": "Authentication Anomaly Hunt",
+            "cadence": "daily",
+            "objective": "Detect suspicious authentication activity indicating credential abuse in IDCS/OCI.",
+            "execution": {
+                "steps": [
+                    "Pull IDCS authentication logs and OCI Audit events for last 24 hours.",
+                    "Identify impossible travel, TOR/VPN origins, excessive failures, MFA denials, and first-time token use.",
+                    "Create incident tickets for high-risk events and apply IP blocks or conditional access per playbook."
+                ],
+                "tooling": [
+                    "IDCS Logs",
+                    "OCI Audit",
+                    "SIEM"
+                ]
+            },
+            "success_criteria": {
+                "pass": "High-risk auth anomalies triaged and contained same day with documented actions.",
+                "warning": "Investigations delayed due to data gaps or awaiting user confirmation (<8h).",
+                "fail": "Confirmed malicious login without containment or repeat anomalies from same source."
+            },
+            "compliance": [
+                {
+                    "framework": "ISO 27001",
+                    "controls": [
+                        "A.12",
+                        "A.16"
+                    ]
+                },
+                {
+                    "framework": "SOC 2",
+                    "controls": [
+                        "CC6",
+                        "CC7"
+                    ]
+                },
+                {
+                    "framework": "NIST 800-53",
+                    "controls": [
+                        "IA-2",
+                        "AU-6"
+                    ]
+                }
+            ],
+            "mitre_attck": {
+                "mitigates": [
+                    {
+                        "tactic": "Credential Access",
+                        "technique_id": "T1110"
+                    },
+                    {
+                        "tactic": "Initial Access",
+                        "technique_id": "T1078"
+                    },
+                    {
+                        "tactic": "Defense Evasion",
+                        "technique_id": "T1078.004"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "APP-04",
+            "name": "OAuth/OIDC/SCIM Application Audit",
+            "cadence": "daily",
+            "objective": "Validate third-party IDCS integrations for least privilege and secure configuration.",
+            "execution": {
+                "steps": [
+                    "List confidential/public apps added or updated in past 30 days with emphasis on last 24h.",
+                    "Review redirect URIs, grant types, scopes, token lifetime, client secret age, and ownership.",
+                    "Disable or quarantine unused or suspicious apps through change control."
+                ],
+                "tooling": [
+                    "IDCS Console",
+                    "IDCS APIs",
+                    "Configuration Management DB"
+                ]
+            },
+            "success_criteria": {
+                "pass": "No wildcard redirects, secrets rotated per policy, scopes justified, usage documented.",
+                "warning": "Apps pending owner verification or scheduled rotation.",
+                "fail": "Unapproved high-privilege scopes, stale secrets in use, or rogue application discovered."
+            },
+            "compliance": [
+                {
+                    "framework": "ISO 27001",
+                    "controls": [
+                        "A.9",
+                        "A.14"
+                    ]
+                },
+                {
+                    "framework": "SOC 2",
+                    "controls": [
+                        "CC6"
+                    ]
+                },
+                {
+                    "framework": "NIST 800-53",
+                    "controls": [
+                        "IA-5",
+                        "AC-3"
+                    ]
+                }
+            ],
+            "mitre_attck": {
+                "mitigates": [
+                    {
+                        "tactic": "Initial Access",
+                        "technique_id": "T1528"
+                    },
+                    {
+                        "tactic": "Persistence",
+                        "technique_id": "T1136"
+                    },
+                    {
+                        "tactic": "Exfiltration",
+                        "technique_id": "T1537"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "NET-05",
+            "name": "Public Exposure and Storage Review",
+            "cadence": "daily",
+            "objective": "Eliminate unintended public access to storage and services.",
+            "execution": {
+                "steps": [
+                    "Enumerate Object Storage buckets for public ACLs and new pre-authenticated requests.",
+                    "Review load balancers, API Gateways, and web listeners for internet exposure; validate WAF and TLS 1.2+.",
+                    "Scan security lists/NSGs for 0.0.0.0/0 on admin ports and ensure Bastion/VPN enforcement."
+                ],
+                "tooling": [
+                    "OCI Object Storage",
+                    "Network Firewall/NSG",
+                    "OCI WAF"
+                ]
+            },
+            "success_criteria": {
+                "pass": "No sensitive buckets public; all public endpoints behind WAF with strong TLS; admin ports restricted.",
+                "warning": "Temporary public PARs with documented expiry or pending WAF attachment.",
+                "fail": "Sensitive buckets public, admin ports exposed, or TLS versions below policy."
+            },
+            "compliance": [
+                {
+                    "framework": "CIS OCI",
+                    "controls": [
+                        "Storage",
+                        "Networking"
+                    ]
+                },
+                {
+                    "framework": "ISO 27001",
+                    "controls": [
+                        "A.13",
+                        "A.18"
+                    ]
+                },
+                {
+                    "framework": "SOC 2",
+                    "controls": [
+                        "CC6"
+                    ]
+                },
+                {
+                    "framework": "NIST 800-53",
+                    "controls": [
+                        "SC-7",
+                        "SC-13"
+                    ]
+                }
+            ],
+            "mitre_attck": {
+                "mitigates": [
+                    {
+                        "tactic": "Initial Access",
+                        "technique_id": "T1190"
+                    },
+                    {
+                        "tactic": "Discovery",
+                        "technique_id": "T1046"
+                    },
+                    {
+                        "tactic": "Exfiltration",
+                        "technique_id": "T1041"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "NET-06",
+            "name": "Network Egress and DNS Monitoring",
+            "cadence": "daily",
+            "objective": "Detect unauthorized egress, command-and-control, and data exfiltration patterns.",
+            "execution": {
+                "steps": [
+                    "Validate route tables, service gateways, and NSGs enforce controlled egress per subnet sensitivity.",
+                    "Review VCN flow logs and DNS logs for unusual destinations, high entropy domains, and rare ports.",
+                    "Escalate anomalies for blocking at NSG/WAF after approval."
+                ],
+                "tooling": [
+                    "VCN Flow Logs",
+                    "DNS Logs",
+                    "SIEM"
+                ]
+            },
+            "success_criteria": {
+                "pass": "No unauthorized 0.0.0.0/0 egress; anomalies investigated or blocked.",
+                "warning": "Unusual spikes under investigation (<24h).",
+                "fail": "Confirmed malicious egress persists >4h or unexplained data transfer anomalies."
+            },
+            "compliance": [
+                {
+                    "framework": "ISO 27001",
+                    "controls": [
+                        "A.13"
+                    ]
+                },
+                {
+                    "framework": "SOC 2",
+                    "controls": [
+                        "CC6"
+                    ]
+                },
+                {
+                    "framework": "NIST 800-53",
+                    "controls": [
+                        "SC-7"
+                    ]
+                },
+                {
+                    "framework": "CIS OCI",
+                    "controls": [
+                        "Network Monitoring"
+                    ]
+                }
+            ],
+            "mitre_attck": {
+                "mitigates": [
+                    {
+                        "tactic": "Command and Control",
+                        "technique_id": "T1071"
+                    },
+                    {
+                        "tactic": "Command and Control",
+                        "technique_id": "T1090"
+                    },
+                    {
+                        "tactic": "Exfiltration",
+                        "technique_id": "T1041"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "DET-07",
+            "name": "Detector Coverage and Service Onboarding",
+            "cadence": "daily",
+            "objective": "Ensure Cloud Guard detectors cover all active regions and services.",
+            "execution": {
+                "steps": [
+                    "Inventory resources per compartment/region and compare with enabled detector families.",
+                    "Enable missing detectors or adjust recipes to match enterprise baseline.",
+                    "Document onboarding status and exceptions."
+                ],
+                "tooling": [
+                    "Cloud Guard",
+                    "Resource Inventory",
+                    "Configuration Management"
+                ]
+            },
+            "success_criteria": {
+                "pass": "Detector coverage equals 100% of active services/regions.",
+                "warning": "Detector gaps identified with open change ticket.",
+                "fail": "Active resources lacking detector coverage for >24h."
+            },
+            "compliance": [
+                {
+                    "framework": "ISO 27001",
+                    "controls": [
+                        "A.12",
+                        "A.18"
+                    ]
+                },
+                {
+                    "framework": "SOC 2",
+                    "controls": [
+                        "CC7"
+                    ]
+                },
+                {
+                    "framework": "NIST 800-53",
+                    "controls": [
+                        "CA-7"
+                    ]
+                }
+            ],
+            "mitre_attck": {
+                "mitigates": [
+                    {
+                        "tactic": "Multiple",
+                        "technique_id": "Detection Coverage"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "KMS-08",
+            "name": "Key Management and Secrets Hygiene",
+            "cadence": "daily",
+            "objective": "Maintain healthy lifecycle for encryption keys and secrets.",
+            "execution": {
+                "steps": [
+                    "List KMS keys with rotation dates, pending deletion, and enabled state; confirm workloads use valid keys.",
+                    "Verify Block/Object/DB encryption status and customer-managed key requirements.",
+                    "Review Vault secrets nearing expiry and schedule rotations."
+                ],
+                "tooling": [
+                    "OCI KMS",
+                    "OCI Vault",
+                    "DB Consoles"
+                ]
+            },
+            "success_criteria": {
+                "pass": "No disabled/expired keys in use; secret rotations scheduled before threshold.",
+                "warning": "Keys/secrets approaching expiry with owner acknowledgment but not yet rotated.",
+                "fail": "Workloads using expired/disabled keys or secrets past expiry causing decrypt failures."
+            },
+            "compliance": [
+                {
+                    "framework": "ISO 27001",
+                    "controls": [
+                        "A.10"
+                    ]
+                },
+                {
+                    "framework": "SOC 2",
+                    "controls": [
+                        "CC6"
+                    ]
+                },
+                {
+                    "framework": "NIST 800-53",
+                    "controls": [
+                        "SC-12",
+                        "SC-13"
+                    ]
+                },
+                {
+                    "framework": "PCI DSS",
+                    "controls": [
+                        "3.6"
+                    ]
+                }
+            ],
+            "mitre_attck": {
+                "mitigates": [
+                    {
+                        "tactic": "Defense Evasion",
+                        "technique_id": "T1553"
+                    },
+                    {
+                        "tactic": "Impact",
+                        "technique_id": "T1491"
+                    },
+                    {
+                        "tactic": "Credential Access",
+                        "technique_id": "T1552"
+                    }
+                ]
+            }
+        }
+    ]
+}
