@@ -1,0 +1,287 @@
+Below is a repeatable daily plan tailored for an OCI tenancy and IDCS. Each task is discrete, independently actionable by a junior engineer, and includes objective, execution steps, passing/warning/failure criteria, compliance objectives, and MITRE ATT&CK coverage. Adjust thresholds to your environment and follow Oracle’s internal security, privacy, and compliance guidelines when using any third‑party tools.
+
+1) Cloud Guard and Security Zones triage
+- Objective: Identify and remediate new high/critical misconfigurations or threats.
+- How to execute:
+  - Open OCI Cloud Guard > Problems. Filter for last 24h, severity High/Critical. Assign owners and due dates.
+  - Verify Security Zones are applied to intended compartments; review any new violations or exceptions.
+  - Confirm detector/responder recipes match the enterprise baseline.
+- Passing: 0 unassigned High/Critical problems; all have owners, tickets, and ETAs; Security Zone drift = 0.
+- Warning: Any High/Critical open >8 hours without owner; 1–2 Security Zone violations awaiting exception approval.
+- Failure: Any Critical open >24 hours without containment plan; resources running in Security Zones with unapproved violations.
+- Compliance: CIS OCI, ISO 27001 A.12/A.18, SOC 2 Security, NIST 800-53 CA-7/RA-5.
+- MITRE ATT&CK: Defense Evasion (T1562), Initial Access (misconfig), Impact (T1490 via unsafe backups); mitigations for multiple techniques.
+
+2) IAM policy and entity delta review (OCI IAM + IDCS)
+- Objective: Prevent privilege creep and unauthorized access.
+- How to execute:
+  - Export current OCI policies; diff against yesterday’s snapshot.
+  - List users, groups, dynamic groups, federations created/modified in last 24h. Validate change requests.
+  - Flag policies with manage all-resources or overly broad conditions; propose least-privilege alternatives.
+- Passing: All changes mapped to approved tickets; no new broad policies; diffs stored and signed off.
+- Warning: Unexplained changes found but under investigation (<8 hours).
+- Failure: Broad policies or new high-privilege groups without approvals; orphaned admin users.
+- Compliance: CIS OCI, ISO 27001 A.9, SOC 2 CC6/CC7, NIST AC-2/AC-6.
+- MITRE ATT&CK: Privilege Escalation (T1068-like via policy), Persistence (T1136 Accounts), Defense Evasion (T1098 Account Manipulation).
+
+3) Authentication anomaly hunt (IDCS/OCI)
+- Objective: Detect suspicious logins and credential abuse.
+- How to execute:
+  - Pull IDCS auth logs and OCI Audit for last 24h. Hunt for:
+    - Impossible travel/geovelocity, TOR/VPN indicators.
+    - Excessive failed logins, MFA denials, password/MFA resets.
+    - First-time use of new API keys or auth tokens.
+  - Create tickets for high-risk events; apply IP blocks/conditional access as approved.
+- Passing: All high-risk events triaged within same day; blocks or justifications documented.
+- Warning: Investigation exceeding 8 hours due to data gaps; pending user verification.
+- Failure: Confirmed malicious login without containment; repeated anomalies from same source.
+- Compliance: ISO 27001 A.12/A.16, SOC 2 CC6/CC7, NIST IA-2/AU-6.
+- MITRE ATT&CK: Credential Access (T1110), Initial Access (Valid Accounts T1078), Defense Evasion (T1078.004 Cloud).
+
+4) OAuth/OIDC/SCIM app audit in IDCS
+- Objective: Identify risky third-party integrations and excessive scopes.
+- How to execute:
+  - List confidential/public apps added/changed in last 30 days; focus on last 24h.
+  - Review redirect URIs (no wildcards), grant types, scopes, token lifetimes, client secret age; check owner and usage.
+  - Disable/quarantine unused or suspicious apps per change control.
+- Passing: No wildcard redirects; least-privilege scopes; secrets rotated per policy; usage justified.
+- Warning: One or more apps pending owner verification or rotation scheduling.
+- Failure: Unapproved high-privilege scopes, leaked or stale secrets in use, rogue app discovered.
+- Compliance: ISO 27001 A.9/A.14, SOC 2 CC6, NIST IA-5/AC-3; OAuth/OIDC best practices.
+- MITRE ATT&CK: Initial Access (OAuth abuse), Persistence (malicious app registration), Exfiltration (via over-scoped tokens).
+
+5) Public exposure and storage review
+- Objective: Eliminate unintended public access to data/services.
+- How to execute:
+  - Enumerate Object Storage buckets; alert on public ACLs or new pre-authenticated requests (PARs).
+  - Review LB/NGINX/API Gateway listeners for public endpoints; ensure WAF/Mitigations and TLS 1.2+.
+  - Scan security lists/NSGs for 0.0.0.0/0 on admin ports; confirm Bastion/VPN enforcement.
+- Passing: No sensitive buckets public; all internet-facing endpoints behind WAF with strong TLS; admin ports restricted.
+- Warning: Temporary public PARs with documented expiry; pending WAF attachment.
+- Failure: Public sensitive buckets; open admin ports from Internet; outdated TLS allowed.
+- Compliance: CIS OCI, ISO 27001 A.13/A.18, SOC 2 CC6, NIST SC-7/SC-13.
+- MITRE ATT&CK: Initial Access (Exposed Service), Discovery (T1046), Exfiltration (public buckets).
+
+6) Network egress and DNS monitoring
+- Objective: Reduce exfiltration and C2 risk.
+- How to execute:
+  - Validate route tables and NSGs for controlled egress; confirm Service/NAT Gateway placement.
+  - Review VCN flow logs and DNS query logs for unusual destinations, high-entropy domains, rare ports.
+  - Escalate anomalies; block at NSG/WAF after approval.
+- Passing: No unauthorized 0.0.0.0/0 egress from sensitive subnets; anomalies investigated or blocked.
+- Warning: Unusual spikes under investigation (<24h).
+- Failure: Confirmed malicious egress persists >4 hours; data transfer anomalies unexplained.
+- Compliance: ISO 27001 A.13, SOC 2 CC6, NIST SC-7, CIS OCI networking.
+- MITRE ATT&CK: Command and Control (T1071/T1090), Exfiltration (T1041), Discovery.
+
+7) Detector coverage and new region/service onboarding
+- Objective: Ensure Cloud Guard detectors cover all active services/regions.
+- How to execute:
+  - Compare inventory (resources by compartment/region) with enabled detectors.
+  - Enable missing detector families; align recipes with enterprise baselines.
+- Passing: 100% in-use services/regions have detectors enabled.
+- Warning: Detector gaps identified with change ticket open.
+- Failure: Active services without detector coverage for >24h.
+- Compliance: ISO 27001 A.12/A.18, SOC 2 CC7, NIST CA-7.
+- MITRE ATT&CK: Improves detection across multiple techniques (defense-in-depth).
+
+8) Key management and secrets hygiene
+- Objective: Maintain encryption and secret lifecycle health.
+- How to execute:
+  - List KMS keys: rotation status, pending deletion, disabled/in-use status.
+  - Validate at-rest encryption for DB/Block/Object; ensure customer-managed keys where required.
+  - Review Vault secrets nearing expiry; schedule rotations.
+- Passing: No disabled/expired keys in active use; rotations scheduled before expiry.
+- Warning: Keys/secrets approaching thresholds without owner acknowledgment.
+- Failure: Workloads using expired/disabled keys; secrets past expiry; failed decrypt events.
+- Compliance: ISO 27001 A.10, SOC 2 CC6, NIST SC-12/SC-13, PCI DSS 3.6 (if applicable).
+- MITRE ATT&CK: Defense Evasion (T1553), Impact (availability via key issues), Credential Access (secrets theft risk).
+
+9) Compute/OKE posture check
+- Objective: Keep hosts and clusters hardened and patched.
+- How to execute:
+  - Verify latest platform images; flag custom images older than policy.
+  - For OKE: check version currency, private endpoint, RBAC least privilege, network policies, image scanning results.
+  - Review OS Management/EDR agent health.
+- Passing: No critical CVEs past SLA; OKE and nodes current; agents >99% healthy.
+- Warning: Patches scheduled within SLA; minor agent gaps.
+- Failure: Critical CVEs past SLA; unsupported OKE version; widespread agent outages.
+- Compliance: CIS Benchmarks, ISO 27001 A.12, SOC 2 CC7, NIST SI-2/CM-2.
+- MITRE ATT&CK: Initial Access (vuln exploit), Privilege Escalation (kernel/container), Defense Evasion (unmonitored hosts).
+
+10) Database security review (Autonomous/DB Systems)
+- Objective: Minimize DB exposure and privilege risk.
+- How to execute:
+  - Confirm DB endpoints are private or approved; TLS enforced.
+  - Review DB user/privilege changes in last 24h; check Data Safe alerts and activity.
+- Passing: No public DB endpoints without exception; all privilege changes approved.
+- Warning: Pending approvals for minor grants; tuning Data Safe policies.
+- Failure: Unauthorized privilege escalations; public endpoints for sensitive DBs.
+- Compliance: ISO 27001 A.9/A.13, SOC 2 CC6, NIST AC-6/SC-7; PCI DSS if in scope.
+- MITRE ATT&CK: Credential Access (DB creds), Collection/Exfiltration (DB dumps), Lateral Movement.
+
+11) Audit/log pipeline health
+- Objective: Ensure complete, timely, tamper-evident logging.
+- How to execute:
+  - Verify OCI Audit enabled tenancy-wide; retention meets policy.
+  - Check Service Connector Hub to Object Storage/SIEM; monitor ingestion lag/errors.
+  - Spot-check logs for IAM, network, compute, DB.
+- Passing: 0 ingestion errors; lag within SLO; all critical services logging.
+- Warning: Intermittent errors; lag slightly over SLO with remediation in progress.
+- Failure: Data loss or disabled audit; gaps in critical service logs.
+- Compliance: ISO 27001 A.12/A.16, SOC 2 CC7, NIST AU-2/AU-6.
+- MITRE ATT&CK: Detection/response coverage across techniques; counters Log Tampering (T1070).
+
+12) SIEM detection tuning and rule hygiene
+- Objective: Maintain high signal-to-noise and rapid detection.
+- How to execute:
+  - Review past 24h alerts; tune thresholds and allowlists via change control.
+  - Add rules for newly observed patterns (e.g., bulk secret reads, policy changes burst).
+- Passing: Reduced false positives week over week; no missed confirmed incidents.
+- Warning: Elevated FP rate with a tuning plan in progress.
+- Failure: Alert fatigue (operators ignoring alerts) or missed true positives.
+- Compliance: ISO 27001 A.12, SOC 2 CC7, NIST IR-4/CA-7.
+- MITRE ATT&CK: Improves detection for Initial Access, Privilege Escalation, Defense Evasion, Exfiltration.
+
+13) Threat intelligence ingestion and retro-hunt
+- Objective: Align defenses with current threats.
+- How to execute:
+  - Ingest curated IOCs/TTPs; validate and update WAF/EDR/blocklists.
+  - Retro-hunt last 7–14 days of logs for matches; open investigations.
+- Passing: Relevant IOCs deployed same day; all matches triaged.
+- Warning: Pending validation of noisy feeds; partial deployment.
+- Failure: Known IOCs unblocked; unreviewed matches >24h.
+- Compliance: ISO 27001 A.12/A.16, SOC 2 CC7, NIST IR-4.
+- MITRE ATT&CK: Proactive coverage for C2 (T1071/T1090), Phishing (T1566), Exploitation (T1190).
+
+14) High-privilege principal access review
+- Objective: Control and monitor powerful roles.
+- How to execute:
+  - List members of Administrators, tenancy-level policy editors, dynamic groups with instance principal powers.
+  - Verify break-glass accounts: strong MFA, no API keys, offline storage.
+- Passing: No unapproved changes; break-glass controls validated.
+- Warning: Pending removal of unnecessary membership (ticket open).
+- Failure: Unapproved high-privilege additions; break-glass without MFA.
+- Compliance: ISO 27001 A.9, SOC 2 CC6, NIST AC-2/AC-5.
+- MITRE ATT&CK: Privilege Escalation (T1078), Persistence (T1136), Defense Evasion.
+
+15) API keys, auth tokens, and automation credentials
+- Objective: Eliminate stale or risky long-lived credentials.
+- How to execute:
+  - List user API keys, auth tokens, SMTP creds; flag older than rotation threshold or unused 30+ days.
+  - Review dynamic group conditions and instance principal scope.
+- Passing: Aging/unused creds revoked/rotated; tight dynamic group scopes.
+- Warning: Rotation scheduled but not completed yet.
+- Failure: Active stale creds; overly broad dynamic groups in production.
+- Compliance: ISO 27001 A.9/A.10, SOC 2 CC6, NIST IA-5.
+- MITRE ATT&CK: Credential Access (T1552), Persistence (long-lived tokens), Defense Evasion.
+
+16) Cost/usage anomaly triage for security signals
+- Objective: Detect cryptomining or abuse via spend/usage spikes.
+- How to execute:
+  - Review daily spend deltas by region/compartment; correlate with Audit creators and IPs.
+  - Investigate anomalous compute/storage/network surges.
+- Passing: No unexplained spikes; anomalies tied to approved changes.
+- Warning: Spike under investigation with containment ready.
+- Failure: Confirmed abuse not contained; recurring unexplained spikes.
+- Compliance: ISO 27001 A.12/A.16, SOC 2 CC7, NIST AU-6 (monitoring).
+- MITRE ATT&CK: Impact/Resource Hijacking (T1496), Discovery/Execution via automated provisioning.
+
+17) Perimeter controls: WAF and Bastion
+- Objective: Ensure edge protection and controlled admin access.
+- How to execute:
+  - Confirm all public apps behind OCI WAF; review top attackers/blocked requests.
+  - Validate Bastion usage for SSH/RDP; search for direct access attempts.
+- Passing: 100% public endpoints with WAF; admin access via Bastion only.
+- Warning: One endpoint pending WAF onboarding with change ticket.
+- Failure: Public endpoints without WAF; direct SSH/RDP open to Internet.
+- Compliance: ISO 27001 A.13, SOC 2 CC6, NIST SC-7; CIS Web App Security.
+- MITRE ATT&CK: Initial Access (T1190), Command and Control (blocked), Recon.
+
+18) Quarantine and risk exception governance
+- Objective: Keep risky resources contained and exceptions time-bound.
+- How to execute:
+  - List quarantined assets and open exceptions; verify owners, compensating controls, and expiry dates.
+  - Escalate overdue items; enforce isolation where required.
+- Passing: No expired exceptions; quarantines with clear remediation path.
+- Warning: Exceptions nearing expiry without action; reminded owners.
+- Failure: Expired exceptions still active; quarantined assets operating without controls.
+- Compliance: ISO 27001 A.12/A.15/A.18, SOC 2 CC3/CC7, NIST RA-3/PM-4.
+- MITRE ATT&CK: Limits Persistence/Defense Evasion by containing risky assets.
+
+19) Backup, DR, and immutability spot check
+- Objective: Assure recoverability from ransomware and operator error.
+- How to execute:
+  - Verify backup success for critical assets; validate immutable Object Storage policies and retention locks.
+  - Confirm cross-region copies for tier-1.
+- Passing: 100% success or immediate retry; immutable copies verified.
+- Warning: Noncritical failures queued for retry; immutability review pending.
+- Failure: Critical backups failed without remediation; missing immutable copies for crown jewels.
+- Compliance: ISO 27001 A.12/A.17, SOC 2 CC9, NIST CP-9/CP-10.
+- MITRE ATT&CK: Impact (T1485/T1490) mitigation; Recovery readiness.
+
+20) Change window security review
+- Objective: Ensure secure-by-default changes and post-change validation.
+- How to execute:
+  - Review today’s approved changes for security impact (policies, endpoints, keys).
+  - Post-change: confirm no new Cloud Guard problems; logs flowing; access as expected.
+- Passing: No high-risk changes without sign-off; post-change checks green.
+- Warning: Minor deviations under investigation with rollback plan.
+- Failure: Unauthorized changes; new critical violations post-change.
+- Compliance: ISO 27001 A.12/Change Mgmt, SOC 2 CC2/CC7, NIST CM-3/CM-4.
+- MITRE ATT&CK: Prevents misconfig leading to Initial Access/Privilege Escalation.
+
+21) Endpoint/agent health (OS Management, Logging, EDR)
+- Objective: Maintain telemetry and protection on hosts.
+- How to execute:
+  - Check agent status across fleets; remediate offline/outdated agents.
+  - Verify logging paths and EDR protections are enabled.
+- Passing: >99% coverage; stragglers ticketed and fixed same day.
+- Warning: Coverage 97–99% with remediation in progress.
+- Failure: <97% coverage; critical hosts unmonitored.
+- Compliance: ISO 27001 A.12, SOC 2 CC7, NIST SI-3/SI-4.
+- MITRE ATT&CK: Defense Evasion (T1562), Execution/Privilege Escalation visibility.
+
+22) User-behavior signals and phishing correlation
+- Objective: Catch compromised identities affecting OCI/IDCS.
+- How to execute:
+  - Review phishing reports related to OCI/IDCS; correlate with password/MFA resets, token creations.
+  - Enforce step-up auth or temporary blocks per playbooks.
+- Passing: Suspected compromises contained same day; users counseled.
+- Warning: Awaiting user verification; monitoring heightened.
+- Failure: Reused credentials or repeated phishing leading to access.
+- Compliance: ISO 27001 A.7/A.12, SOC 2 CC2/CC6, NIST IR-4/AT-2.
+- MITRE ATT&CK: Initial Access (T1566), Credential Access, Persistence.
+
+23) Sensitive data and egress controls (Data Safe/Object Storage)
+- Objective: Ensure PII/PCI data has proper boundaries and monitoring.
+- How to execute:
+  - Review Data Safe discovery deltas; verify controls on new sensitive assets.
+  - Check large object exports/downloads from sensitive compartments; validate tickets.
+- Passing: No unapproved egress; sensitive assets properly controlled.
+- Warning: Large transfers under investigation; temporary holds applied.
+- Failure: Confirmed unauthorized egress or exposure.
+- Compliance: ISO 27001 A.18, SOC 2 Confidentiality, NIST PL-2/SC-7; PCI DSS where applicable.
+- MITRE ATT&CK: Collection/Exfiltration (T1530/T1041), Impact prevention.
+
+24) Ticket/incident queue hygiene
+- Objective: Maintain SLA and clear response ownership.
+- How to execute:
+  - Triage new security tickets; prioritize by severity/dwell time; update owners and next steps.
+  - Close with root cause and corrective actions.
+- Passing: P1s acknowledged within minutes and actioned; no SLA breaches.
+- Warning: Approaching SLA thresholds; escalations initiated.
+- Failure: SLA breaches or unowned P1s.
+- Compliance: ISO 27001 A.16, SOC 2 CC7, NIST IR-5/IR-6.
+- MITRE ATT&CK: Improves response across all techniques.
+
+25) Daily security summary and metrics
+- Objective: Communicate status, risks, and decisions needed.
+- How to execute:
+  - Compile KPIs: critical findings, MTTR, patch SLA, logging health, notable detections, exceptions.
+  - Distribute to stakeholders; capture action items and owners.
+- Passing: Report delivered on time; owners acknowledge actions.
+- Warning: Partial data with clear follow-ups; minor delay.
+- Failure: No report; unresolved blockers uncommunicated.
+- Compliance: ISO 27001 A.5/A.6 Governance, SOC 2 CC1/CC2.
+- MITRE ATT&CK: N/A directly; supports governance for all TTPs.
